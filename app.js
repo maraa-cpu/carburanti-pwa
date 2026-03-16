@@ -1,28 +1,49 @@
 const btn = document.getElementById('geo-btn');
-const resultDiv = document.getElementById('result');
-const latSpan = document.getElementById('lat');
-const lngSpan = document.getElementById('lng');
 const errorP = document.getElementById('error');
+const mapDiv = document.getElementById('map');
+
+let map; 
+let userMarker; 
 
 btn.addEventListener('click', () => {
-  resultDiv.classList.add('hidden');
-  errorP.classList.add('hidden');
+  errorP.style.display = 'none';
+  btn.innerText = "⏳ Ricerca in corso..."; 
 
   if (!navigator.geolocation) {
-    errorP.innerText = 'La geolocalizzazione non è supportata dal tuo browser.';
-    errorP.classList.remove('hidden');
+    showError('GPS non supportato dal browser.');
     return;
   }
 
   navigator.geolocation.getCurrentPosition(
     (position) => {
-      latSpan.innerText = position.coords.latitude;
-      lngSpan.innerText = position.coords.longitude;
-      resultDiv.classList.remove('hidden');
+      const lat = position.coords.latitude;
+      const lng = position.coords.longitude;
+      
+      btn.innerText = "📍 Posizione trovata!";
+      mapDiv.style.display = 'block';
+
+      if (!map) {
+        map = L.map('map').setView([lat, lng], 14);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
+        userMarker = L.marker([lat, lng]).addTo(map)
+          .bindPopup("<b>Tu sei qui!</b>").openPopup();
+      } else {
+        map.setView([lat, lng], 14);
+        userMarker.setLatLng([lat, lng]);
+      }
     },
     (error) => {
-      errorP.innerText = 'Impossibile recuperare la posizione. Hai cliccato "Consenti"?';
-      errorP.classList.remove('hidden');
+      btn.innerText = "📍 Riprova";
+      showError('Impossibile ottenere la posizione. Hai dato i permessi?');
     }
   );
 });
+
+function showError(msg) {
+  errorP.innerText = msg;
+  errorP.style.display = 'block';
+}
